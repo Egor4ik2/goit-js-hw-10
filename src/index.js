@@ -9,8 +9,6 @@ const countryInfo = document.querySelector('.country-info');
 
 const DEBOUNCE_DELAY = 300;
 
-const API_ENDPOINT = 'https://restcountries.com/v3.1';
-
 const debounceSearch = debounce(() => {
   const searchTerm = searchBox.value.trim();
 
@@ -54,7 +52,7 @@ function showCountryList(countries) {
 
     listHTML += `
       <li class="country">
-        <img class="flag" src="${flags.svg}" alt="${name.official} flag">
+        <img class="flag" src="${flags.png}" alt="${name.official} flag">
         <span class="name">${name.official}</span>
       </li>
     `;
@@ -73,7 +71,7 @@ function showCountryInfo(country) {
 
   const infoHTML = `
     <div class="country">
-      <img class="flag" src="${flags.svg}" alt="${name.official} flag">
+      <img class="flag" src="${flags.png}" alt="${name.official} flag">
       <div class="details">
         <h2>${name.official}</h2>
         <p><strong>Capital:</strong> ${capital}</p>
@@ -85,8 +83,6 @@ function showCountryInfo(country) {
 
   countryInfo.innerHTML = infoHTML;
   showElement(countryInfo);
-
-  console.log(country); // Выводим response в консоль для проверки
 }
 
 function hideCountryInfo() {

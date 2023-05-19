@@ -1,4 +1,5 @@
 import './css/styles.css';
+import './css/styles.css';
 import { fetchCountries } from "./fetchCountries.js";
 import debounce from 'lodash.debounce';
 import Notiflix from 'notiflix';
@@ -20,7 +21,7 @@ const debounceSearch = debounce(() => {
   fetchCountries(searchTerm)
     .then(countries => {
       if (countries.length > 10) {
-        showNotification('Too many matches found. Please enter a more specific name.');
+        showNotification('Too many matches found. Please enter a more specific name.', 'blue');
         clearResults();
       } else if (countries.length >= 2 && countries.length <= 10) {
         showCountryList(countries);
@@ -31,7 +32,11 @@ const debounceSearch = debounce(() => {
       }
     })
     .catch(error => {
-      showNotification('Oops, there is no country with that name.');
+      if (error.message === '404') {
+        showNotification('Country not found');
+      } else {
+        showNotification('An error occurred while fetching the country data');
+      }
       clearResults();
     });
 }, DEBOUNCE_DELAY);
@@ -52,7 +57,7 @@ function showCountryList(countries) {
 
     listHTML += `
       <li class="country">
-        <img class="flag" src="${flags.png}" alt="${name.official} flag">
+        <img class="flag" src="${flags.svg}" alt="${name.official} flag">
         <span class="name">${name.official}</span>
       </li>
     `;
@@ -71,7 +76,7 @@ function showCountryInfo(country) {
 
   const infoHTML = `
     <div class="country">
-      <img class="flag" src="${flags.png}" alt="${name.official} flag">
+      <img class="flag" src="${flags.svg}" alt="${name.official} flag">
       <div class="details">
         <h2>${name.official}</h2>
         <p><strong>Capital:</strong> ${capital}</p>
@@ -89,9 +94,13 @@ function hideCountryInfo() {
   hideElement(countryInfo);
 }
 
-function showNotification(message) {
-  Notiflix.Notify.failure(message);
+function showNotification(message, color = 'red') {
+  Notiflix.Notify.failure(message, {
+    cssAnimationDuration: 400,
+    classNames: ['notification', color],
+  });
 }
+
 
 function hideElement(element) {
   element.style.display = 'none';

@@ -1,111 +1,67 @@
 import './css/styles.css';
-import './css/styles.css';
-import { fetchCountries } from "./fetchCountries.js";
-import debounce from 'lodash.debounce';
-import Notiflix from 'notiflix';
-
-const searchBox = document.getElementById('search-box');
-const countryList = document.querySelector('.country-list');
-const countryInfo = document.querySelector('.country-info');
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { fetchCountries } from './fetchCountries';
+const debounce = require('lodash.debounce');
 
 const DEBOUNCE_DELAY = 300;
 
-const debounceSearch = debounce(() => {
-  const searchTerm = searchBox.value.trim();
+const refs = {
+  inputEl: document.getElementById('search-box'),
+  listEl: document.querySelector('.country-list'),
+  divEl: document.querySelector('.country-info'),
+};
 
-  if (searchTerm === '') {
-    clearResults();
-    return;
+refs.inputEl.addEventListener('input', debounce(handleInput, DEBOUNCE_DELAY));
+
+function handleInput(e) {
+  if (!e.target.value) {
+    return clearHTML();
   }
 
-  fetchCountries(searchTerm)
-    .then(countries => {
-      if (countries.length > 10) {
-        showNotification('Too many matches found. Please enter a more specific name.', 'blue');
-        clearResults();
-      } else if (countries.length >= 2 && countries.length <= 10) {
-        showCountryList(countries);
-        hideCountryInfo();
-      } else if (countries.length === 1) {
-        showCountryInfo(countries[0]);
-        hideCountryList();
+  fetchCountries(e.target.value.trim())
+    .then(data => {
+      if (data.length > 10) {
+        clearHTML();
+
+        Notify.info(
+          'Too many matches found. Please enter a more specific name.'
+        );
+      } else if (data.length >= 2) {
+        clearHTML();
+
+        refs.listEl.innerHTML = data
+          .sort((a, b) => a.name.common.localeCompare(b.name.common))
+          .reduce((acc, elem) => {
+            return (
+              acc +
+              `<li class="country-item"><img src="${elem.flags.svg}" alt="${elem.name.official}" width="40"><span>${elem.name.common}</span></li>`
+            );
+          }, '');
+      } else if (data.length === 1) {
+        clearHTML();
+
+        refs.divEl.innerHTML = `<div><div class="header"><img src="${
+          data[0].flags.svg
+        }" alt="${data[0].name.common}" width="40"><h2>${
+          data[0].name.common
+        }</h2></div><p><span class="values">Capital: </span>${
+          data[0].capital
+        }</p><p><span class="values">Population: </span>${
+          data[0].population
+        }</p><p><span class="values">Languages: </span>${Object.values(
+          data[0].languages
+        ).join(', ')}</p></div>`;
       }
     })
     .catch(error => {
       if (error.message === '404') {
-        showNotification('Country not found');
-      } else {
-        showNotification('An error occurred while fetching the country data');
+        clearHTML();
+        Notify.failure('Oops, there is no country with that name');
       }
-      clearResults();
     });
-}, DEBOUNCE_DELAY);
-
-searchBox.addEventListener('input', debounceSearch);
-
-function clearResults() {
-  countryList.innerHTML = '';
-  hideCountryList();
-  hideCountryInfo();
 }
 
-function showCountryList(countries) {
-  let listHTML = '';
-
-  countries.forEach(country => {
-    const { flags, name } = country;
-
-    listHTML += `
-      <li class="country">
-        <img class="flag" src="${flags.svg}" alt="${name.official} flag">
-        <span class="name">${name.official}</span>
-      </li>
-    `;
-  });
-
-  countryList.innerHTML = listHTML;
-  showElement(countryList);
-}
-
-function hideCountryList() {
-  hideElement(countryList);
-}
-
-function showCountryInfo(country) {
-  const { flags, name, capital, population, languages } = country;
-
-  const infoHTML = `
-    <div class="country">
-      <img class="flag" src="${flags.svg}" alt="${name.official} flag">
-      <div class="details">
-        <h2>${name.official}</h2>
-        <p><strong>Capital:</strong> ${capital}</p>
-        <p><strong>Population:</strong> ${population}</p>
-        <p><strong>Languages:</strong> ${languages.map(lang => lang.name).join(', ')}</p>
-      </div>
-    </div>
-  `;
-
-  countryInfo.innerHTML = infoHTML;
-  showElement(countryInfo);
-}
-
-function hideCountryInfo() {
-  hideElement(countryInfo);
-}
-
-function showNotification(message, color = 'red') {
-  Notiflix.Notify.failure(message, {
-    cssAnimationDuration: 400,
-    classNames: ['notification', color],
-  });
-}
-
-
-function hideElement(element) {
-  element.style.display = 'none';
-}
-
-function showElement(element) {
-  element.style.display = 'block';
+function clearHTML() {
+  refs.listEl.innerHTML = '';
+  refs.divEl.innerHTML = '';
 }
